@@ -27,7 +27,7 @@ ln -s "$(pwd)/skills" ~/.cline/skills/
 
 ```shell
 mkdir -p ~/.kilo/skills
-ln -s "$(pwd)/skills" ~/.kilo/skills/
+ln -s "$(pwd)/skills" ~/.kilocode/skills/
 ```
 
 ## 🤖 Cursor
