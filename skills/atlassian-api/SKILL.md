@@ -1,13 +1,13 @@
 ---
-name: atlassian-direct-api
+name: atlassian-api
 description: >
-  Direct Atlassian Jira and Confluence API access for coding agents — NO MCP server required.
-  Use this skill whenever a task involves reading or writing Jira issues, projects, boards,
-  sprints, comments, attachments, worklogs, or Confluence pages, spaces, macros, or attachments.
-  Trigger on any request mentioning Jira, Confluence, Atlassian, tickets, epics, sprints,
-  backlogs, wiki pages, or any related workflow. This skill covers all auth mechanisms
-  (API token, OAuth 2.0, PAT, browser session) and provides precise REST call patterns for
-  both Cloud and Data Center deployments.
+  Direct access to Atlassian Jira and Confluence APIs for coding agents. Use this skill whenever a task involves reading
+  or writing Jira issues, projects, boards, sprints, comments, attachments, worklogs, or Confluence pages, spaces,
+  macros, or attachments. Trigger on any request mentioning Jira, Confluence, Atlassian, tickets, epics, sprints,
+  backlogs, wiki pages, or any related workflow. This skill covers all auth mechanisms (API token, OAuth 2.0, PAT,
+  browser session) and provides precise REST call patterns for both Cloud and Data Center deployments.
+license: GPLv3
+compatibility: Designed for Claude, Cline, KiloCode (or similar products)
 ---
 
 # Atlassian Direct API Skill
