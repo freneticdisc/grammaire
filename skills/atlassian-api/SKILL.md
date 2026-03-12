@@ -91,4 +91,5 @@ Use [references/QUICK-LINKS.md](references/QUICK-LINKS.md) for Jira/Confluence A
 - Do not assume aliases without `atlassian-config`.
 - Do not hardcode secrets.
 - Never display or log headers, cookies, or tokens.
+- Do not save output files by default; print results to stdout unless the user explicitly requests file output.
 - If no valid token and no session state, stop and report blocker.
