@@ -2,14 +2,12 @@
 # /// script
 # dependencies = [
 #  "cyclopts",
-#  "playwright",
-#  "validators"
+#  "playwright"
 # ]
 # requires-python = ">=3.12"
 # ///
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
-from json import loads
 from os import environ
 from pathlib import Path
 from platform import system
@@ -20,9 +18,8 @@ from typing import Annotated, Optional
 from cyclopts.core import App
 from cyclopts.parameter import Parameter
 from playwright.sync_api import sync_playwright
-from validators import url as is_url
 
-from variables import APP_DIR, BROWSERS_CACHE, CONFIG_FILE
+from variables import APP_DIR, BROWSERS_CACHE
 
 BROWSERS = {
     "darwin": [
@@ -86,12 +83,6 @@ def default(
     platform = system().lower()
     log(f"application state directory is {APP_DIR}")
     log(f"the platform is {platform}")
-
-    if not is_url(url):
-        if not CONFIG_FILE.exists(): error("missing config file")
-        config = loads(CONFIG_FILE.read_text())
-        url = config.get(url) or config.get(config.get("default"))
-        if not url or not is_url(url): error("invalid alias or url provided")
 
     STATE_FILE = APP_DIR / f"{sha256(url.encode()).hexdigest()}.json"
     if STATE_FILE.exists() and not force:
