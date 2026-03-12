@@ -23,29 +23,37 @@ Use for Jira/Confluence/Atlassian tasks.
 ## Flow
 
 1. Check `uv` first:
-  - `uv --version`
-  - If missing, stop and handle per agent policy.
+
+- `uv --version`
+- If missing, stop and handle per agent policy.
 
 2. Resolve variables:
-  - `uv run scripts/variables.py`
-  - Use `config_file`.
+
+- `uv run scripts/variables.py`
+- Use `config_file`.
 
 3. Require `url` or `alias`.
+  - If a full Jira/Confluence page URL is provided (for example, `/browse/<KEY>` or `/wiki/...`), extract the base URL
+    and use that for API calls.
+  - Example: `https://jira.company.com/browse/TASK-123` -> `https://jira.company.com`.
 
 4. If user gives `alias`:
-  - Use `atlassian-config` `get(config_path, alias)` to resolve `url` and `token_variable`.
-  - If lookup fails, ask for a valid alias or URL.
+
+- Use `atlassian-config` `get(config_path, alias)` to resolve `url` and `token_variable`.
+- If lookup fails, ask for a valid alias or URL.
 
 5. If user gives `url`:
-  - Use it directly.
-  - Ask whether to save it via `atlassian-config` `save(...)`.
+
+- Use it directly.
+- Ask whether to save it via `atlassian-config` `save(...)`.
 
 6. Auth:
-  - If `token_variable` exists, check env, then `.env`, `.env.local`, `.env.development`, `.env.production`, `~/.env`.
-  - If token found, use Bearer auth.
-  - If token missing, run `uv run scripts/browser.py "<url>"`, read `state_file`, build cookie auth, set `X-XSRF-TOKEN`
-    from `atlassian.xsrf.token` or `XSRF-TOKEN` or `atl.xsrf.token`, and use `X-Atlassian-Token: no-check` for
-    multipart/upload.
+
+- If `token_variable` exists, check env, then `.env`, `.env.local`, `.env.development`, `.env.production`, `~/.env`.
+- If token found, use Bearer auth.
+- If token missing, run `uv run scripts/browser.py "<url>"`, read `state_file`, build cookie auth, set `X-XSRF-TOKEN`
+  from `atlassian.xsrf.token` or `XSRF-TOKEN` or `atl.xsrf.token`, and use `X-Atlassian-Token: no-check` for
+  multipart/upload.
 
 7. Execute REST calls in Python with `httpx` via `uv`.
 
