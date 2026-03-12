@@ -23,6 +23,13 @@ mkdir -p ~/.cline/skills
 ln -s "$(pwd)/skills" ~/.cline/skills/
 ```
 
+## 🤖 Codex
+
+```shell
+mkdir -p ~/.codex/skills
+ln -s "$(pwd)/skills" ~/.codex/skills/
+```
+
 ## 🤖 KiloCode
 
 ```shell
