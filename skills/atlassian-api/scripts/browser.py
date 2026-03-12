@@ -10,7 +10,7 @@
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from json import loads
-from os import environ, getenv
+from os import environ
 from pathlib import Path
 from platform import system
 from subprocess import run
@@ -22,7 +22,8 @@ from cyclopts.parameter import Parameter
 from playwright.sync_api import sync_playwright
 from validators import url as is_url
 
-APP_DIR = Path.home() / ".atlassian"
+from variables import APP_DIR, BROWSERS_CACHE, CONFIG_FILE
+
 BROWSERS = {
     "darwin": [
         ("chrome", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
@@ -51,8 +52,6 @@ BROWSERS = {
         ("firefox", r"C:\Program Files (x86)\Mozilla Firefox\firefox.exe")
     ],
 }
-BROWSERS_CACHE = APP_DIR / "browsers"
-CONFIG_FILE = APP_DIR / "config.json"
 STATE_FILE = None
 TIMEOUT = 1000 * 600
 TTL = 28800
@@ -74,31 +73,19 @@ def log(msg: str, log_locals: bool = False) -> None:
 
 
 def success() -> None:
-    result = {
-        "application_dir": str(APP_DIR),
-        "config_file": str(CONFIG_FILE),
-        "success": True
-    }
-    if cache := getenv("PLAYWRIGHT_BROWSERS_PATH"):
-        result["browsers_cache"] = cache
-    if STATE_FILE:
-        result["state_file"] = str(STATE_FILE)
-    application.console.print_json(data=result, indent=2, sort_keys=True)
+    application.console.print_json(data={"state_file": str(STATE_FILE)}, indent=2, sort_keys=True)
     exit()
 
 
 @application.default
 def default(
-        url: Optional[str] = None,
+        url: str,
         force: Annotated[Optional[bool], Parameter(negative="")] = False
 ):
     global STATE_FILE
     platform = system().lower()
     log(f"application state directory is {APP_DIR}")
     log(f"the platform is {platform}")
-
-    if not url:
-        success()
 
     if not is_url(url):
         if not CONFIG_FILE.exists(): error("missing config file")
@@ -152,7 +139,8 @@ def default(
     error("an unknown error has occurred")
 
 
-try:
-    application()
-except Exception as ex:
-    error(str(ex))
+if __name__ == "__main__":
+    try:
+        application()
+    except Exception as ex:
+        error(str(ex))
