@@ -11,6 +11,7 @@ from hashlib import sha256
 from os import environ
 from pathlib import Path
 from platform import system
+from shutil import which
 from subprocess import run
 from sys import exit
 from typing import Annotated, Optional
@@ -95,7 +96,7 @@ def default(
         try:
             browser = None
             for channel, path in BROWSERS.get(platform):
-                if path and (path := Path(path)).exists() and path.is_file():
+                if path and (Path(path).exists() or (path := which(path))):
                     match channel:
                         case "chrome" | "edge":
                             browser = playwright.chromium.launch(executable_path=path, headless=False)
