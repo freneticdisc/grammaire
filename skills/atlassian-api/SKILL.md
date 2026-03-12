@@ -19,6 +19,19 @@ Use for Jira/Confluence/Atlassian tasks.
 - Use Python + `httpx` for all Atlassian API calls.
 - Run scripts with `uv`.
 - Do not use `curl` or non-Python HTTP clients.
+- Any Python script used for REST calls must start with:
+
+```python
+#!/usr/bin/env -S uv run
+# /// script
+# dependencies = [
+#  "httpx"
+# ]
+# requires-python = ">=3.12"
+# ///
+```
+
+- Add additional packages to the `dependencies` list as needed for the task; keep `httpx` included for API calls.
 
 ## Flow
 
@@ -33,9 +46,10 @@ Use for Jira/Confluence/Atlassian tasks.
 - Use `config_file`.
 
 3. Require `url` or `alias`.
-  - If a full Jira/Confluence page URL is provided (for example, `/browse/<KEY>` or `/wiki/...`), extract the base URL
-    and use that for API calls.
-  - Example: `https://jira.company.com/browse/TASK-123` -> `https://jira.company.com`.
+
+- If a full Jira/Confluence page URL is provided (for example, `/browse/<KEY>` or `/wiki/...`), extract the base URL
+  and use that for API calls.
+- Example: `https://jira.company.com/browse/TASK-123` -> `https://jira.company.com`.
 
 4. If user gives `alias`:
 
