@@ -1,12 +1,12 @@
 ---
-name: atlassian-rich-field-formatter
+name: atlassian-rich-text-formatter
 description: >
   Generate Atlassian-ready rich text for Jira and Confluence from raw content or context. Use before creating or
   updating Jira descriptions, comments, environment fields, textarea custom fields, Confluence pages, blog posts, or
   comments when the endpoint needs ADF JSON, Jira wiki markup, Confluence storage XHTML, or Confluence wiki markup.
 ---
 
-# Atlassian Rich Field Formatter
+# Atlassian Rich Text Formatter
 
 Return only the formatted content or requested JSON fragment. Do not call Atlassian APIs.
 

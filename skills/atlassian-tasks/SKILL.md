@@ -35,7 +35,7 @@ description: >
 4. **Check for missing fields.** If any required path/query/body field is not derivable from the URL or instructions,
    ask for only those values and wait.
 5. **Format rich text.** Before constructing a body that includes Jira descriptions/comments/environment/textarea fields
-   or Confluence page/blog/comment bodies, use `atlassian-rich-field-formatter` with the product, endpoint/schema
+   or Confluence page/blog/comment bodies, use `atlassian-rich-text-formatter` with the product, endpoint/schema
    context, field name, and source content. Use the returned ADF, wiki markup, or Confluence storage value exactly.
 6. **Authenticate.** Mode A (PAT) or Mode B (browser) per rules below.
 7. **Execute.** Construct requests and run in sub-agents per rules below.
@@ -61,7 +61,7 @@ description: >
 - **Endpoint URL:** Append resolved path to base URL, substitute `{paramName}` tokens, append URL-encoded query params.
 - **Body:** JSON built from endpoint schema and user-supplied values only. Do not fabricate or default any field.
 - **Rich text fields:** Never pass raw Markdown into Jira or Confluence REST rich-text fields. Use
-  `atlassian-rich-field-formatter` to generate the endpoint's expected representation, then insert that value into the
+  `atlassian-rich-text-formatter` to generate the endpoint's expected representation, then insert that value into the
   JSON body without reformatting it.
 - **Pagination:** Auto-fetch subsequent pages when a response contains `startAt`/`maxResults`, a pagination token, or
   `_links.next`, unless instructions imply a limit.
