@@ -2,6 +2,7 @@
 # /// script
 # dependencies = [
 #  "cyclopts",
+#  "platformdirs",
 #  "playwright"
 # ]
 # requires-python = ">=3.12"
@@ -13,14 +14,14 @@ from pathlib import Path
 from platform import system
 from shutil import which
 from subprocess import run
-from sys import exit
+from sys import executable, exit
 from typing import Annotated, Optional
+from urllib.parse import urlparse
 
 from cyclopts.core import App
 from cyclopts.parameter import Parameter
+from platformdirs import user_state_path
 from playwright.sync_api import sync_playwright
-
-from variables import APP_DIR, BROWSERS_CACHE
 
 BROWSERS = {
     "darwin": [
@@ -50,6 +51,9 @@ BROWSERS = {
         ("firefox", r"C:\Program Files (x86)\Mozilla Firefox\firefox.exe")
     ],
 }
+
+CACHE_DIR = user_state_path(appname="atlassian", ensure_exists=True)
+BROWSERS_CACHE = CACHE_DIR / "browsers"
 STATE_FILE = None
 TIMEOUT = 1000 * 600
 TTL = 28800
@@ -82,10 +86,10 @@ def default(
 ):
     global STATE_FILE
     platform = system().lower()
-    log(f"application state directory is {APP_DIR}")
+    log(f"application state directory is {CACHE_DIR}")
     log(f"the platform is {platform}")
 
-    STATE_FILE = APP_DIR / f"{sha256(url.encode()).hexdigest()}.json"
+    STATE_FILE = CACHE_DIR / f"{sha256(urlparse(url).netloc.encode()).hexdigest()}.json"
     if STATE_FILE.exists() and not force:
         mtime = datetime.fromtimestamp(STATE_FILE.stat().st_mtime, tz=timezone.utc)
         if mtime + timedelta(seconds=TTL) > datetime.now(timezone.utc):
@@ -108,7 +112,7 @@ def default(
             log("unable to locate or launch a local browser")
             log("installing and starting the bundled chromium browser")
             environ["PLAYWRIGHT_BROWSERS_PATH"] = str(BROWSERS_CACHE)
-            run(["playwright", "install", "chromium"], check=True)
+            run([executable, "-m", "playwright", "install", "chromium"], check=True)
             browser = playwright.chromium.launch(headless=False)
         context = browser.new_context()
         page = context.new_page()
@@ -120,7 +124,6 @@ def default(
                 timeout=TIMEOUT
             )
             log("saving browser storage state")
-            APP_DIR.mkdir(parents=True, exist_ok=True)
             context.storage_state(path=str(STATE_FILE))
             success()
         finally:
