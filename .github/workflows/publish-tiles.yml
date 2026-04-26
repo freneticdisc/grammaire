@@ -2,7 +2,7 @@ name: Publish Tessl Tiles
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -15,10 +15,12 @@ jobs:
           - skills/atlassian-endpoint-resolver
           - skills/atlassian-rich-text-formatter
           - skills/atlassian-tasks
+    env:
+      TESSL_TOKEN: ${{ secrets.TESSL_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-      - uses: tessl-io/publish-tile-action@v1
-        with:
-          tile-path: ${{ matrix.skill }}
-          api-key: ${{ secrets.TESSL_TOKEN }}
-          review-threshold: 70
+      - uses: tesslio/setup-tessl@v1
+      - name: Lint
+        run: tessl tile lint ${{ matrix.skill }}
+      - name: Publish
+        run: tessl tile publish ${{ matrix.skill }}
