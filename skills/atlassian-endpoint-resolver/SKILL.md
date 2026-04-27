@@ -54,66 +54,26 @@ For each spec URL in the registry:
 1. Fetch the JSON.
 2. Read `info.title` and `info.version` (for display labeling).
 3. Extract the `paths` object — a map of `{ "/path/template": { "get": {...}, "post": {...}, ... } }`.
-4. Each HTTP method object contains:
-   - `summary` — short human-readable description (most important for matching)
-   - `description` — longer explanation (secondary)
-   - `operationId` — camelCase function name (useful for verb/noun extraction)
-   - `tags` — grouping category
-   - `parameters` — array of parameter objects. Each parameter has:
-     - `name` — the parameter key
-     - `in` — location: `"path"`, `"query"`, `"header"`, or `"cookie"`
-     - `required` — boolean; `true` means the caller must supply it
-     - `description` — what the parameter does
-     - `schema.type` / `schema.enum` — data type and allowed values if constrained
-     - Extract **path params** (`in: "path"`) and **query strings** (`in: "query"`) separately
-   - `requestBody` — present on POST/PUT/PATCH endpoints. Contains:
-     - `required` — boolean
-     - `content` — map of media type → schema, almost always `"application/json"`
-     - `content["application/json"].schema` — the JSON payload shape. This may be:
-       - An inline `properties` object listing each field with its `type` and `description`
-       - A `$ref` pointer like `"#/components/schemas/CreateIssueRequest"` — resolve the ref path in the same OpenAPI
-         document and recursively expand the full schema object before returning output
-     - Ref expansion rules:
-       - Do not return raw `$ref` as the primary request body schema output
-       - Keep `originalRef` only as optional metadata for traceability
-       - Use cycle detection and a depth guard when recursively resolving nested refs
-       - If expansion is incomplete due to cycle/depth guard, set `partiallyExpanded: true`
-     - `content["multipart/form-data"]` — used for file upload endpoints (attachments)
+4. For each HTTP method object, use `summary`, `description`, `operationId`, `tags`, `parameters`, and
+   `requestBody` for matching and output.
+  - Extract path parameters and query parameters separately.
+  - For `application/json` request bodies, recursively expand same-document `$ref` schemas before returning output.
+  - Do not return raw `$ref` as the primary request body schema output.
+  - Keep `originalRef` only as optional traceability metadata.
+  - Use cycle detection and a depth guard; set `partiallyExpanded: true` if expansion is incomplete.
+  - Preserve `multipart/form-data` request bodies for attachment/upload endpoints.
 
 ## Step 3 — Score each endpoint
 
-For every `(path, method)` pair, compute a relevance score against the operation:
-
-| Signal                               | Weight | Details                                                                |
-|--------------------------------------|--------|------------------------------------------------------------------------|
-| Action verb match in `summary`       | 3      | e.g., "create" in operation → "Create issue" in summary                |
-| Resource noun match in `summary`     | 3      | e.g., "issue" in operation → "Get issue" in summary                    |
-| Action verb match in `operationId`   | 2      | camelCase parsing: `createIssue` → ["create", "issue"]                 |
-| Resource noun match in path template | 2      | `/rest/api/3/issue/{issueIdOrKey}`                                     |
-| Key query param name match           | 2      | e.g., operation mentions "JQL" → endpoint has `jql` query param        |
-| Key request body field match         | 2      | e.g., operation mentions "transition" → body has `transition.id` field |
-| Match in `description`               | 1      | Fallback for edge cases                                                |
-| Synonym expansion match              | 2      | Apply synonyms from Step 1                                             |
-| Tag match                            | 1      | e.g., tag "Issues" for issue operations                                |
-
-**Threshold**: Include an endpoint if its total weighted score **≥ 5**. Prefer precision to recall — a tight match is
-better than a loose one.
-
-**Important edge cases:**
-
-- If the operation mentions "bulk", restrict to endpoints with "bulk" in path or summary.
-- If the operation is read-only (get/list/search/find), de-prioritize POST/PUT/DELETE endpoints.
-- If the operation involves a specific resource by ID (e.g., "get issue by ID"), prefer paths with `{issueIdOrKey}`,
-  `{id}`, or `{pageId}` parameters.
-- If nothing scores above the threshold, **lower the threshold and retry** with just
-  the primary resource noun. Never return an empty result without trying synonyms first.
+Read `references/scoring.md`, then score every `(path, method)` pair against the operation. Apply the threshold,
+edge-case filters, and retry behavior from that reference before returning results.
 
 ## Step 4 — Deduplicate across API versions
- 
+
 The same logical endpoint often appears in both v2 and v3 of Jira (or v1 and v2 of Confluence) with identical or
 near-identical paths. **Keep all versions** — do not deduplicate across APIs. Each version is a separate entry in the
 output.
- 
+
 Within a single API spec, if the exact same `(path, method)` appears more than once (rare), keep only the first
 occurrence.
 
@@ -127,7 +87,7 @@ Before returning results, normalize each matched endpoint's request body schema:
 - If useful, include `Original Ref` as metadata only (not as a substitute for the expanded schema)
 
 ## Output Format
- 
+
 Return a structured response as a list of:
 
 - URL
@@ -135,3 +95,18 @@ Return a structured response as a list of:
 - Query Parameters
 - Request Body Schema (Expanded, `application/json`)
 - Original Ref (optional metadata)
+
+## Example
+
+Input operation:
+
+`create a Jira issue`
+
+Expected top match:
+
+- URL: `POST /rest/api/3/issue`
+- Path Parameters: none
+- Query Parameters: none unless the matched spec defines optional query parameters
+- Request Body Schema (Expanded, `application/json`): include fields such as `fields.project`, `fields.issuetype`,
+  `fields.summary`, and any required fields after resolving same-document schema refs
+- Original Ref: include only if the request body came from a `$ref`
