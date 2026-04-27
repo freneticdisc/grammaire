@@ -19,14 +19,14 @@ Required `operation` the inferred intent text and target application (Confluence
 
 ## API Registry
 
-Fetch these specs at runtime (in parallel where possible) based on the `operation`.
+Read these specs at runtime (in parallel where possible) based on the `operation`.
 
-| Priority | API Name       | Version | Spec URL                                                                 |
-|----------|----------------|---------|--------------------------------------------------------------------------|
-| 1        | Jira API       | v3      | `https://developer.atlassian.com/cloud/jira/platform/swagger-v3.v3.json` |
-| 2        | Jira API       | v2      | `https://developer.atlassian.com/cloud/jira/platform/swagger.v3.json`    |
-| 1        | Confluence API | v2      | `https://developer.atlassian.com/cloud/confluence/openapi-v2.v3.json`    |
-| 2        | Confluence API | v1      | `https://developer.atlassian.com/cloud/confluence/swagger.v3.json`       |
+| Priority | API Name       | Version | Spec Location                           |
+|----------|----------------|---------|-----------------------------------------|
+| 1        | Jira API       | v3      | `references/jira.swagger.v3.json`       |
+| 2        | Jira API       | v2      | `references/jira.swagger.v2.json`       |
+| 1        | Confluence API | v2      | `references/confluence.swagger.v2.json` |
+| 2        | Confluence API | v1      | `references/confluence.swagger.v1.json` |
 
 ## Step 1 — Parse the operation
 
@@ -49,9 +49,9 @@ Generate a set of **search terms** from these tokens. Also produce **synonyms**:
 
 ## Step 2 — Fetch specs and extract paths
 
-For each spec URL in the registry:
+For each local spec file in the registry:
 
-1. Fetch the JSON.
+1. Open the JSON file from the skill's directory.
 2. Read `info.title` and `info.version` (for display labeling).
 3. Extract the `paths` object — a map of `{ "/path/template": { "get": {...}, "post": {...}, ... } }`.
 4. Each HTTP method object contains:
