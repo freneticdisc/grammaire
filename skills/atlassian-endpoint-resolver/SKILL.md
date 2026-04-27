@@ -21,12 +21,12 @@ Required `operation` the inferred intent text and target application (Confluence
 
 Fetch these specs at runtime (in parallel where possible) based on the `operation`.
 
-| Priority | API Name       | Version | Spec URL                                                                              |
-|----------|----------------|---------|---------------------------------------------------------------------------------------|
-| 1        | Jira API       | v3      | `https://dac-static.atlassian.com/cloud/jira/platform/swagger-v3.v3.json?_v=1.8465.0` |
-| 2        | Jira API       | v2      | `https://dac-static.atlassian.com/cloud/jira/platform/swagger.v3.json?_v=1.8465.0`    |
-| 1        | Confluence API | v2      | `https://dac-static.atlassian.com/cloud/confluence/openapi-v2.v3.json?_v=1.8465.0`    |
-| 2        | Confluence API | v1      | `https://dac-static.atlassian.com/cloud/confluence/swagger.v3.json?_v=1.8465.0`       |
+| Priority | API Name       | Version | Spec URL                                                                 |
+|----------|----------------|---------|--------------------------------------------------------------------------|
+| 1        | Jira API       | v3      | `https://developer.atlassian.com/cloud/jira/platform/swagger-v3.v3.json` |
+| 2        | Jira API       | v2      | `https://developer.atlassian.com/cloud/jira/platform/swagger.v3.json`    |
+| 1        | Confluence API | v2      | `https://developer.atlassian.com/cloud/confluence/openapi-v2.v3.json`    |
+| 2        | Confluence API | v1      | `https://developer.atlassian.com/cloud/confluence/swagger.v3.json`       |
 
 ## Step 1 — Parse the operation
 
@@ -86,17 +86,17 @@ For every `(path, method)` pair, compute a relevance score against the operation
 
 | Signal                               | Weight | Details                                                                |
 |--------------------------------------|--------|------------------------------------------------------------------------|
-| Action verb match in `summary`       | High   | e.g., "create" in operation → "Create issue" in summary                |
-| Resource noun match in `summary`     | High   | e.g., "issue" in operation → "Get issue" in summary                    |
-| Action verb match in `operationId`   | Medium | camelCase parsing: `createIssue` → ["create", "issue"]                 |
-| Resource noun match in path template | Medium | `/rest/api/3/issue/{issueIdOrKey}`                                     |
-| Key query param name match           | Medium | e.g., operation mentions "JQL" → endpoint has `jql` query param        |
-| Key request body field match         | Medium | e.g., operation mentions "transition" → body has `transition.id` field |
-| Match in `description`               | Low    | Fallback for edge cases                                                |
-| Synonym expansion match              | Medium | Apply synonyms from Step 1                                             |
-| Tag match                            | Low    | e.g., tag "Issues" for issue operations                                |
+| Action verb match in `summary`       | 3      | e.g., "create" in operation → "Create issue" in summary                |
+| Resource noun match in `summary`     | 3      | e.g., "issue" in operation → "Get issue" in summary                    |
+| Action verb match in `operationId`   | 2      | camelCase parsing: `createIssue` → ["create", "issue"]                 |
+| Resource noun match in path template | 2      | `/rest/api/3/issue/{issueIdOrKey}`                                     |
+| Key query param name match           | 2      | e.g., operation mentions "JQL" → endpoint has `jql` query param        |
+| Key request body field match         | 2      | e.g., operation mentions "transition" → body has `transition.id` field |
+| Match in `description`               | 1      | Fallback for edge cases                                                |
+| Synonym expansion match              | 2      | Apply synonyms from Step 1                                             |
+| Tag match                            | 1      | e.g., tag "Issues" for issue operations                                |
 
-**Threshold**: Include an endpoint if it scores ≥ 2 weighted signal hits. Prefer precision to recall — a tight match is
+**Threshold**: Include an endpoint if its total weighted score **≥ 5**. Prefer precision to recall — a tight match is
 better than a loose one.
 
 **Important edge cases:**
