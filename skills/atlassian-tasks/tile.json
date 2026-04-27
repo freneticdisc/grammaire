@@ -2,7 +2,7 @@
   "name": "grammaire/atlassian-tasks",
   "version": "0.1.0",
   "summary": "Execute Jira and Confluence operations with endpoint discovery, payload construction, and authentication.",
-  "private": true,
+  "private": false,
   "skills": {
     "atlassian-tasks": {
       "path": "SKILL.md"
