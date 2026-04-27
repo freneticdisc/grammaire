@@ -2,7 +2,7 @@
   "name": "grammaire/atlassian-rich-text-formatter",
   "version": "0.1.0",
   "summary": "Generate Atlassian-ready rich text for Jira and Confluence fields, comments, pages, and blog posts.",
-  "private": true,
+  "private": false,
   "skills": {
     "atlassian-rich-text-formatter": {
       "path": "SKILL.md"
