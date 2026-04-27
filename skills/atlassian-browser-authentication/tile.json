@@ -1,6 +1,6 @@
 {
   "name": "grammaire/atlassian-browser-authentication",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "summary": "Authenticate to Atlassian by opening a local browser for sign-in/MFA and saving reusable Playwright auth state.",
   "private": false,
   "skills": {
