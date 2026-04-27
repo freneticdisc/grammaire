@@ -2,7 +2,7 @@
   "name": "grammaire/atlassian-endpoint-resolver",
   "version": "0.1.0",
   "summary": "Resolve best-matching Atlassian REST API endpoints from an inferred Jira or Confluence operation.",
-  "private": true,
+  "private": false,
   "skills": {
     "atlassian-endpoint-resolver": {
       "path": "SKILL.md"
