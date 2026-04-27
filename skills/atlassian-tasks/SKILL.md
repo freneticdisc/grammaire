@@ -24,6 +24,8 @@ description: >
   with `/jira`, `/wiki`, `/confluence`, `/secure`, `/browse`, or `/rest`). If none found, ask.
 - Never ask for a token when `pat_token_file` is absent — use Mode B.
 - Never assume values for required API fields not supplied by the user; ask explicitly.
+- Never read, print, summarize, quote, or copy PAT values, browser-auth cookie values, or credential-bearing headers.
+  Treat `pat_token_file` and browser-auth `state_file` values as opaque credential source paths only.
 
 ## Workflow
 
@@ -38,20 +40,19 @@ description: >
    or Confluence page/blog/comment bodies, use `atlassian-rich-text-formatter` with the product, endpoint/schema
    context, field name, and source content. Use the returned ADF, wiki markup, or Confluence storage value exactly.
 6. **Authenticate.** Mode A (PAT) or Mode B (browser) per rules below.
-7. **Execute.** Construct requests and run in sub-agents per rules below.
+7. **Execute.** Build only non-secret request metadata, then call `scripts/request.py` per rules below.
 8. **Return results** per Output spec.
 
 ## Authentication
 
-**Mode A — PAT file provided:** Read and strip `pat_token_file`. Send `Authorization: Bearer <token>`,
-`Accept: application/json`, and `Content-Type: application/json` (when body present) on every request.
+**Mode A — PAT file provided:** Do not open or read `pat_token_file`; pass only its path to `scripts/request.py` with
+`--pat-file`.
 
 **Mode B — No PAT file:**
 
 1. Launch `atlassian-browser-authentication` with the resolved URL. If it fails or returns no `state_file`, stop and
    report the error.
-2. Read `state_file`, extract cookies, and send as a `Cookie` header alongside `Accept` and `Content-Type` on every
-   request.
+2. Do not open or read `state_file`; pass only its path to `scripts/request.py` with `--state-file`.
 3. On `401 Unauthorized`, rerun `atlassian-browser-authentication` with `FORCE` and retry once.
 
 ## Request Construction
@@ -59,7 +60,12 @@ description: >
 - **Base URL:** `<scheme>://<host><context_path>` where `context_path` is the non-API prefix (e.g. `/jira`,
   `/confluence`).
 - **Endpoint URL:** Append resolved path to base URL, substitute `{paramName}` tokens, append URL-encoded query params.
-- **Body:** JSON built from endpoint schema and user-supplied values only. Do not fabricate or default any field.
+- **Body:** JSON built from endpoint schema and user-supplied values only. Do not fabricate or default any field. For
+  request bodies, write non-secret JSON to a temporary file, pass it with `--body-file`, then delete the temporary file.
+  Do not delete `pat_token_file` or browser-auth `state_file`.
+- **Execution:** Run every API request with:
+  `uv run "$SKILL_DIR/scripts/request.py" --method <METHOD> --url <URL> (--pat-file <PAT_FILE> | --state-file <STATE_FILE>) [--query KEY=VALUE ...] [--body-file <BODY_JSON>]`.
+  Prefer reusable prefix approval: `["uv", "run", "$SKILL_DIR/scripts/request.py"]`.
 - **Rich text fields:** Never pass raw Markdown into Jira or Confluence REST rich-text fields. Use
   `atlassian-rich-text-formatter` to generate the endpoint's expected representation, then insert that value into the
   JSON body without reformatting it.
