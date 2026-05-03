@@ -1,141 +1,92 @@
 #!/usr/bin/env -S uv run
 # /// script
 # dependencies = [
-#  "cyclopts",
 #  "platformdirs",
 #  "playwright"
 # ]
 # requires-python = ">=3.12"
 # ///
+from argparse import ArgumentParser
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
+from json import dumps
 from os import environ
-from pathlib import Path
 from platform import system
-from shutil import which
 from subprocess import run
-from sys import executable, exit
-from typing import Annotated, Optional
+from sys import executable, exit, stderr
 from urllib.parse import urlparse
 
-from cyclopts.core import App
-from cyclopts.parameter import Parameter
 from platformdirs import user_state_path
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import Error, sync_playwright
 
-BROWSERS = {
-    "darwin": [
-        ("chrome", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
-        ("chrome", f"{Path.home()}/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
-        ("edge", "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"),
-        ("edge", f"{Path.home()}/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"),
-        ("firefox", "/Applications/Firefox.app/Contents/MacOS/firefox"),
-        ("firefox", f"{Path.home()}/Applications/Firefox.app/Contents/MacOS/firefox")
-    ],
-    "linux": [
-        ("chrome", "google-chrome"),
-        ("chrome", "google-chrome-stable"),
-        ("chrome", "chromium"),
-        ("chrome", "chromium-browser"),
-        ("edge", "microsoft-edge"),
-        ("edge", "microsoft-edge-stable"),
-        ("firefox", "firefox"),
-        ("firefox", "firefox-esr")
-    ],
-    "windows": [
-        ("chrome", r"C:\Program Files\Google\Chrome\Application\chrome.exe"),
-        ("chrome", r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"),
-        ("edge", r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"),
-        ("edge", r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"),
-        ("firefox", r"C:\Program Files\Mozilla Firefox\firefox.exe"),
-        ("firefox", r"C:\Program Files (x86)\Mozilla Firefox\firefox.exe")
-    ],
-}
+p = ArgumentParser()
+p.add_argument("url")
+p.add_argument("--force", action="store_true")
+args = p.parse_args()
 
-CACHE_DIR = user_state_path(appname="atlassian", ensure_exists=True)
-BROWSERS_CACHE = CACHE_DIR / "browsers"
-STATE_FILE = None
-TIMEOUT = 1000 * 600
-TTL = 28800
+cache_dir = user_state_path(appname="atlassian", ensure_exists=True)
+platform = system().lower()
+state_file = cache_dir / f"{sha256(urlparse(args.url).netloc.encode()).hexdigest()}.json"
+timeout = 1000 * 600
+ttl = 28800
 
-application = App(exit_on_error=False, print_error=False)
+stderr.write(f"application state directory is {cache_dir}\n")
+stderr.write(f"the platform is {platform}\n")
+if state_file.exists() and not args.force:
+    mtime = datetime.fromtimestamp(state_file.stat().st_mtime, tz=timezone.utc)
+    if mtime + timedelta(seconds=ttl) > datetime.now(timezone.utc):
+        stderr.write("\nsession state has time to live")
+        print(dumps({"state_file": str(state_file)}, indent=2))
+        exit()
 
-
-def error(msg: str) -> None:
-    application.console.print_json(
-        data={"error_message": msg, "success": False},
-        indent=2,
-        sort_keys=True
-    )
-    exit(1)
-
-
-def log(msg: str, log_locals: bool = False) -> None:
-    application.error_console.log(msg, log_locals=log_locals)
-
-
-def success() -> None:
-    application.console.print_json(data={"state_file": str(STATE_FILE)}, indent=2, sort_keys=True)
-    exit()
-
-
-@application.default
-def default(
-        url: str,
-        force: Annotated[Optional[bool], Parameter(negative="")] = False
-):
-    global STATE_FILE
-    platform = system().lower()
-    log(f"application state directory is {CACHE_DIR}")
-    log(f"the platform is {platform}")
-
-    STATE_FILE = CACHE_DIR / f"{sha256(urlparse(url).netloc.encode()).hexdigest()}.json"
-    if STATE_FILE.exists() and not force:
-        mtime = datetime.fromtimestamp(STATE_FILE.stat().st_mtime, tz=timezone.utc)
-        if mtime + timedelta(seconds=TTL) > datetime.now(timezone.utc):
-            log("session state has time to live")
-            success()
-
-    with sync_playwright() as playwright:
-        try:
-            browser = None
-            for channel, path in BROWSERS.get(platform):
-                if path and (Path(path).exists() or (path := which(path))):
-                    match channel:
-                        case "chrome" | "edge":
-                            browser = playwright.chromium.launch(executable_path=path, headless=False)
-                        case "firefox":
-                            browser = playwright.firefox.launch(executable_path=path, headless=False)
-                        case _:
-                            raise RuntimeError("no supported local browser found")
-        except:
-            log("unable to locate or launch a local browser")
-            log("installing and starting the bundled chromium browser")
-            environ["PLAYWRIGHT_BROWSERS_PATH"] = str(BROWSERS_CACHE)
-            run([executable, "-m", "playwright", "install", "chromium"], check=True)
-            browser = playwright.chromium.launch(headless=False)
-        context = browser.new_context()
-        page = context.new_page()
-        try:
-            page.goto(url)
-            page.wait_for_selector(
-                'meta[id="atlassian-token"], meta[name="ajs-atl-token"]',
-                state="attached",
-                timeout=TIMEOUT
-            )
-            log("saving browser storage state")
-            context.storage_state(path=str(STATE_FILE))
-            success()
-        finally:
-            page.close()
-            context.close()
-            browser.close()
-    log("something went wrong", log_locals=True)
-    error("an unknown error has occurred")
-
-
-if __name__ == "__main__":
+with sync_playwright() as playwright:
     try:
-        application()
-    except Exception as ex:
-        error(str(ex))
+        context = playwright.chromium.launch_persistent_context(
+            channel="chrome",
+            headless=False,
+            ignore_default_args=["--disable-component-update"],
+            user_data_dir=str(cache_dir / "data" / "chrome")
+        )
+    except Error as error:
+        stderr.write("unable to locate a browser using channel chrome\n")
+        try:
+            context = playwright.chromium.launch_persistent_context(
+                channel="chromium",
+                headless=False,
+                ignore_default_args=["--disable-component-update"],
+                user_data_dir=str(cache_dir / "data" / "chromium")
+            )
+        except Error as error:
+            stderr.write("unable to locate a browser using channel chromium\n")
+            try:
+                context = playwright.chromium.launch_persistent_context(
+                    channel="msedge",
+                    headless=False,
+                    ignore_default_args=["--disable-component-update"],
+                    user_data_dir=str(cache_dir / "data" / "msedge")
+                )
+            except Error as error:
+                stderr.write("unable to locate a browser using channel msedge\n")
+                stderr.write("unable to locate or launch a local browser\n")
+                stderr.write("installing and starting the bundled chromium browser\n")
+                environ["PLAYWRIGHT_BROWSERS_PATH"] = str(cache_dir / "browsers")
+                run([executable, "-m", "playwright", "install", "chromium"], check=True)
+                context = playwright.chromium.launch_persistent_context(
+                    headless=False,
+                    ignore_default_args=["--disable-component-update"],
+                    user_data_dir=str(cache_dir / "data" / "chromium")
+                )
+    page = context.pages[0] if context.pages else context.new_page()
+    try:
+        page.goto(args.url)
+        page.wait_for_selector(
+            'meta[id="atlassian-token"], meta[name="ajs-atl-token"]',
+            state="attached",
+            timeout=timeout
+        )
+        stderr.write("saving browser storage state\n")
+        context.storage_state(path=str(state_file))
+        print(dumps({"state_file": str(state_file)}, indent=2))
+    finally:
+        page.close()
+        context.close()

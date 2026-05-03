@@ -27,7 +27,7 @@ Use this when Atlassian API/browser work needs an authenticated session.
 
 - Set `SKILL_DIR` to the absolute installed path of this skill.
 - Run: `uv run "$SKILL_DIR/scripts/browser.py" "<URL>"`.
-- If `FORCE=true`, run: `uv run "$SKILL_DIR/scripts/browser.py" "<URL>" true`.
+- If `FORCE=true`, run: `uv run "$SKILL_DIR/scripts/browser.py" "<URL>" --force`.
 
 Use absolute script paths so this works both from the repo and when the skill is installed under agent skills.
 
