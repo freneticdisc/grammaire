@@ -50,7 +50,6 @@ Use allow rules for these terminal command prefixes (platform-agnostic):
 - `oci --auth security_token --profile ... raw-request`
 - `oci session authenticate`
 - `oci session refresh`
-- `ssh operator-access-token.svc.ad1.r2 generate --mode jwt`
 - `uv run .../atlassian-browser-authentication/scripts/browser.py`
 - `uvx oh-my-releases`
 - `uvx pariksha`
@@ -78,8 +77,6 @@ prefix_rule(pattern=["oci", "--auth", "security_token"], decision="allow")
 prefix_rule(pattern=["oci", "--version"], decision="allow")
 prefix_rule(pattern=["oci", "session", "refresh"], decision="allow")
 prefix_rule(pattern=["oci", "session", "authenticate"], decision="allow")
-prefix_rule(pattern=["ossh"], decision="allow")
-prefix_rule(pattern=["ssh", "operator-access-token.svc.ad1.r2"], decision="allow")
 prefix_rule(pattern=["uv", "run"], decision="allow")
 prefix_rule(pattern=["uvx"], decision="allow")
 ```
@@ -101,8 +98,6 @@ The `Bash(...)` matcher name represents terminal commands across macOS/Linux/Win
       "Bash(oci --version)",
       "Bash(oci session authenticate *)",
       "Bash(oci session refresh *)",
-      "Bash(ossh *)",
-      "Bash(ssh operator-access-token.svc.ad1.r2 generate --mode jwt)",
       "Bash(uv run *)",
       "Bash(uvx *)"
     ]
@@ -128,8 +123,6 @@ key, mirror the same command patterns there.
       "oci session authenticate *": "allow",
       "oci --auth security_token --profile * raw-request *": "allow",
       "oci --version": "allow",
-      "ossh *": "allow",
-      "ssh operator-access-token.svc.ad1.r2 generate --mode jwt": "allow",
       "uv run *": "allow",
       "uvx *": "allow"
     }
