@@ -51,8 +51,6 @@ Use allow rules for these terminal command prefixes (platform-agnostic):
 - `oci session authenticate`
 - `oci session refresh`
 - `uv run .../atlassian-browser-authentication/scripts/browser.py`
-- `uvx oh-my-releases`
-- `uvx pariksha`
 
 Regex is not portable across these clients. Use explicit prefix/glob patterns instead:
 
